@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1220;
+    --ink:#F5F7FA;
+    --yellow:#F4C430;
+    --silver:#AAB4C3;
+    --silver-dim:#687386;
+    --hairline:#263142;
+    --glass:rgba(245,247,250,0.05);
+    --glass-border:rgba(245,247,250,0.09);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    font-family:'Jost', sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:60px 24px;
+    overflow-x:hidden;
+    position:relative;
+  }
+  .glow{ position:fixed; border-radius:50%; filter:blur(110px); z-index:-1; }
+  .glow-yellow{ width:420px; height:420px; background:var(--yellow); opacity:0.16; top:-120px; left:-100px; }
+  .glow-silver{ width:460px; height:460px; background:var(--silver); opacity:0.10; bottom:-160px; right:-120px; }
+
+  .page{
+    width:100%;
+    max-width:420px;
+    text-align:center;
+    transition:max-width 0.35s ease;
+  }
+  .page.has-weather{
+    max-width:1100px;
+    display:grid;
+    grid-template-columns:300px 1fr;
+    gap:60px;
+    align-items:start;
+    text-align:left;
+  }
+
+  .left{ display:flex; flex-direction:column; }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:4px;
+    text-transform:uppercase;
+    color:var(--silver);
+    margin-bottom:22px;
+  }
+  .search-row{
+    display:inline-flex;
+    gap:14px;
+    padding-bottom:14px;
+    border-bottom:1px solid var(--hairline);
+  }
+  .page.has-weather .search-row{ display:flex; }
+  select{
+    appearance:none;
+    background:transparent;
+    border:none;
+    color:var(--ink);
+    font-family:'Jost', sans-serif;
+    font-size:15px;
+    letter-spacing:0.3px;
+    padding:8px 4px;
+    cursor:pointer;
+    min-width:180px;
+  }
+  select option{ background:var(--bg); color:var(--ink); }
+  select:focus-visible{ outline:2px solid var(--yellow); outline-offset:2px; }
+  button{
+    border:1px solid var(--yellow);
+    background:transparent;
+    color:var(--yellow);
+    padding:8px 22px;
+    font-family:'Jost', sans-serif;
+    font-size:13px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    cursor:pointer;
+    border-radius:999px;
+    transition:background 0.25s ease, color 0.25s ease;
+  }
+  button:hover{ background:var(--yellow); color:var(--bg); }
+  button:focus-visible{ outline:2px solid var(--yellow); outline-offset:4px; }
+  #message{ color:var(--silver); font-size:14px; margin-top:18px; }
+  .hidden{ display:none; }
+  #location{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:500;
+    font-size:26px;
+    letter-spacing:1px;
+    color:var(--yellow);
+    margin-top:26px;
+  }
+
+  .card{
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:22px;
+    backdrop-filter:blur(24px) saturate(140%);
+    -webkit-backdrop-filter:blur(24px) saturate(140%);
+    box-shadow:0 20px 50px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+    padding:30px;
+  }
+  .card-title{
+    font-size:11px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--silver-dim);
+    margin-bottom:18px;
+  }
+
+  .right{
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    grid-template-areas:
+      "hero stats"
+      "graph graph"
+      "forecast forecast";
+    gap:22px;
+  }
+  .hero-card{ grid-area:hero; text-align:center; display:flex; flex-direction:column; justify-content:center; }
+  .temp{ font-family:'Cormorant Garamond', serif; font-weight:500; font-size:84px; line-height:1; }
+  .temp .deg{ font-size:32px; vertical-align:top; position:relative; top:12px; color:var(--silver); }
+  #description{
+    font-size:13px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--silver);
+    margin-top:10px;
+  }
+
+  .stats-card{ grid-area:stats; }
+  .stats{ display:grid; grid-template-columns:repeat(2,1fr); gap:22px; }
+  .stat{ display:flex; flex-direction:column; gap:6px; }
+  .stat-label{ font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--silver-dim); }
+  .stat-value{ font-family:'Cormorant Garamond', serif; font-size:26px; }
+  .stat-sub{ font-size:10px; letter-spacing:1px; color:var(--yellow); }
+
+  .graph-card{ grid-area:graph; }
+  #graph svg{ width:100%; height:auto; display:block; }
+
+  .forecast-card{ grid-area:forecast; }
+  .forecast{ display:grid; grid-template-columns:repeat(7,1fr); gap:0; }
+  .day{
+    text-align:center;
+    padding:0 8px;
+    border-left:1px solid var(--hairline);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .day:first-child{ border-left:none; }
+  .day-name{ font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--silver-dim); }
+  .day-desc{ font-size:11px; color:var(--silver); min-height:28px; }
+  .day-high{ font-family:'Cormorant Garamond', serif; font-size:20px; }
+  .day-low{ font-size:12px; color:var(--silver-dim); }
+
+  @media (max-width:900px){
+    .page.has-weather{ grid-template-columns:1fr; max-width:460px; text-align:center; gap:0; }
+    .page.has-weather .left{ align-items:center; }
+    .right{ grid-template-columns:1fr; grid-template-areas:"hero" "stats" "graph" "forecast"; margin-top:30px; }
+    .forecast{ grid-template-columns:repeat(4,1fr); row-gap:20px; }
+    .day:nth-child(4n+1){ border-left:none; }
+    .temp{ font-size:66px; }
+  }
+</style>
+</head>
+<body>
+  <div class="glow glow-yellow"></div>
+  <div class="glow glow-silver"></div>
+
+  <div class="page" id="page">
+    <div class="left">
+      <p class="eyebrow">Weather</p>
+      <div class="search-row">
+        <select id="citySelect">
+          <option value="">Select a city</option>
+          <option value="Tokyo">Tokyo</option>
+          <option value="Osaka">Osaka</option>
+          <option value="Kyoto">Kyoto</option>
+          <option value="Hiroshima">Hiroshima</option>
+          <option value="Nagasaki">Nagasaki</option>
+          <option value="Los Angeles">Los Angeles</option>
+          <option value="San Diego">San Diego</option>
+          <option value="Mississippi">Mississippi</option>
+          <option value="Chicago">Chicago</option>
+          <option value="Madison">Madison</option>
+        </select>
+        <button id="searchBtn">View</button>
+      </div>
+      <p id="message"></p>
+      <h2 id="location" class="hidden"></h2>
+    </div>
+
+    <div class="right hidden" id="weather">
+      <section class="card hero-card">
+        <div class="temp"><span id="temperature"></span><span class="deg">°C</span></div>
+        <p id="description"></p>
+      </section>
+
+      <section class="card stats-card">
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-label">AQI</span>
+            <span class="stat-value" id="aqi"></span>
+            <span class="stat-sub" id="aqiLabel"></span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Local Time</span>
+            <span class="stat-value" id="localTime"></span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Sunrise</span>
+            <span class="stat-value" id="sunrise"></span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Sunset</span>
+            <span class="stat-value" id="sunset"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card graph-card">
+        <p class="card-title">Today</p>
+        <div id="graph"></div>
+      </section>
+
+      <section class="card forecast-card">
+        <p class="card-title">7-Day Forecast</p>
+        <div id="forecast" class="forecast"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const page = document.getElementById("page");
+    const citySelect = document.getElementById("citySelect");
+    const searchBtn = document.getElementById("searchBtn");
+    const weatherDiv = document.getElementById("weather");
+    const message = document.getElementById("message");
+    const locationElement = document.getElementById("location");
+    const temperatureElement = document.getElementById("temperature");
+    const descriptionElement = document.getElementById("description");
+    const aqiElement = document.getElementById("aqi");
+    const aqiLabelElement = document.getElementById("aqiLabel");
+    const sunriseElement = document.getElementById("sunrise");
+    const sunsetElement = document.getElementById("sunset");
+    const localTimeElement = document.getElementById("localTime");
+    const graphContainer = document.getElementById("graph");
+    const forecastContainer = document.getElementById("forecast");
+
+    let clockInterval = null;
+
+    searchBtn.addEventListener("click", getWeather);
+
+    async function getWeather() {
+      const city = citySelect.value;
+      if (city === "") {
+        message.textContent = "Please select a city.";
+        resetView();
+        return;
+      }
+
+      message.textContent = "Loading...";
+      resetView();
+      if (clockInterval) clearInterval(clockInterval);
+
+      try {
+        const geoURL = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+        const geoResponse = await fetch(geoURL);
+        if (!geoResponse.ok) throw new Error("Unable to find city.");
+        const geoData = await geoResponse.json();
+        if (!geoData.results || geoData.results.length === 0) throw new Error("City not found.");
+
+        const location = geoData.results[0];
+        const { latitude, longitude } = location;
+
+        const weatherURL = `https://api.open-meteo.com/v1/forecast` +
+          `?latitude=${latitude}&longitude=${longitude}` +
+          `&current=temperature_2m,weather_code` +
+          `&hourly=temperature_2m` +
+          `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset` +
+          `&timezone=auto&forecast_days=7`;
+
+        const aqiURL = `https://air-quality-api.open-meteo.com/v1/air-quality` +
+          `?latitude=${latitude}&longitude=${longitude}&current=us_aqi&timezone=auto`;
+
+        const [weatherResponse, aqiResponse] = await Promise.all([fetch(weatherURL), fetch(aqiURL)]);
+        if (!weatherResponse.ok) throw new Error("Unable to fetch weather data.");
+
+        const weatherData = await weatherResponse.json();
+        const aqiData = aqiResponse.ok ? await aqiResponse.json() : null;
+
+        displayWeather(location, weatherData, aqiData);
+        message.textContent = "";
+        locationElement.classList.remove("hidden");
+        weatherDiv.classList.remove("hidden");
+        page.classList.add("has-weather");
+      } catch (error) {
+        message.textContent = error.message;
+        resetView();
+      }
+    }
+
+    function resetView() {
+      weatherDiv.classList.add("hidden");
+      locationElement.classList.add("hidden");
+      page.classList.remove("has-weather");
+    }
+
+    function displayWeather(location, data, aqiData) {
+      locationElement.textContent = `${location.name}, ${location.country}`;
+      temperatureElement.textContent = Math.round(data.current.temperature_2m);
+      descriptionElement.textContent = getWeatherDescription(data.current.weather_code);
+
+      sunriseElement.textContent = extractTime(data.daily.sunrise[0]);
+      sunsetElement.textContent = extractTime(data.daily.sunset[0]);
+
+      if (aqiData && aqiData.current && aqiData.current.us_aqi != null) {
+        const value = Math.round(aqiData.current.us_aqi);
+        aqiElement.textContent = value;
+        aqiLabelElement.textContent = getAqiLabel(value);
+      } else {
+        aqiElement.textContent = "—";
+        aqiLabelElement.textContent = "";
+      }
+
+      startClock(data.utc_offset_seconds);
+      renderGraph(data.hourly.temperature_2m.slice(0, 24), data.utc_offset_seconds);
+      renderForecast(data.daily);
+    }
+
+    function extractTime(isoString) {
+      return isoString.split("T")[1];
+    }
+
+    function startClock(utcOffsetSeconds) {
+      updateClock(utcOffsetSeconds);
+      clockInterval = setInterval(() => updateClock(utcOffsetSeconds), 1000);
+    }
+
+    function updateClock(utcOffsetSeconds) {
+      const target = new Date(Date.now() + utcOffsetSeconds * 1000);
+      const hours = String(target.getUTCHours()).padStart(2, "0");
+      const minutes = String(target.getUTCMinutes()).padStart(2, "0");
+      localTimeElement.textContent = `${hours}:${minutes}`;
+    }
+
+    function renderGraph(temps, utcOffsetSeconds) {
+      const width = 760, height = 160, pad = 16;
+      const min = Math.min(...temps), max = Math.max(...temps);
+      const range = (max - min) || 1;
+      const points = temps.map((t, i) => [
+        pad + (i / (temps.length - 1)) * (width - pad * 2),
+        pad + (1 - (t - min) / range) * (height - pad * 2)
+      ]);
+
+      let line = `M ${points[0][0]} ${points[0][1]}`;
+      for (let i = 1; i < points.length; i++) {
+        const [x0, y0] = points[i - 1];
+        const [x1, y1] = points[i];
+        const mx = (x0 + x1) / 2;
+        line += ` Q ${x0} ${y0} ${mx} ${(y0 + y1) / 2}`;
+      }
+      line += ` T ${points[points.length - 1][0]} ${points[points.length - 1][1]}`;
+
+      const area = `${line} L ${points[points.length - 1][0]} ${height - pad} L ${points[0][0]} ${height - pad} Z`;
+
+      const localNow = new Date(Date.now() + utcOffsetSeconds * 1000);
+      const currentHour = Math.min(localNow.getUTCHours(), temps.length - 1);
+      const [nowX, nowY] = points[currentHour];
+
+      const labelHours = [0, 6, 12, 18, 23];
+      const labels = labelHours.map(h => {
+        const [x] = points[h];
+        return `<text x="${x}" y="${height - 2}" font-size="10" fill="var(--silver-dim)" text-anchor="middle">${String(h).padStart(2, "0")}</text>`;
+      }).join("");
+
+      graphContainer.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#F4C430" stop-opacity="0.35" />
+              <stop offset="100%" stop-color="#F4C430" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <path d="${area}" fill="url(#fillGrad)" />
+          <path d="${line}" fill="none" stroke="#F4C430" stroke-width="2" />
+          <circle cx="${nowX}" cy="${nowY}" r="4" fill="#F4C430" />
+          ${labels}
+        </svg>`;
+    }
+
+    function renderForecast(daily) {
+      forecastContainer.innerHTML = "";
+      for (let i = 0; i < daily.time.length; i++) {
+        const date = new Date(daily.time[i]);
+        const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+        const tile = document.createElement("div");
+        tile.className = "day";
+        tile.innerHTML = `
+          <span class="day-name">${dayName}</span>
+          <span class="day-desc">${getWeatherDescription(daily.weather_code[i])}</span>
+          <span class="day-high">${Math.round(daily.temperature_2m_max[i])}°</span>
+          <span class="day-low">${Math.round(daily.temperature_2m_min[i])}°</span>`;
+        forecastContainer.appendChild(tile);
+      }
+    }
+
+    function getAqiLabel(value) {
+      if (value <= 50) return "Good";
+      if (value <= 100) return "Moderate";
+      if (value <= 150) return "Sensitive";
+      if (value <= 200) return "Unhealthy";
+      if (value <= 300) return "Very Unhealthy";
+      return "Hazardous";
+    }
+
+    function getWeatherDescription(code) {
+      const weatherCodes = {
+        0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+        45: "Fog", 48: "Rime fog",
+        51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle",
+        61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain",
+        71: "Slight snow", 73: "Moderate snow", 75: "Heavy snow",
+        80: "Rain showers", 81: "Rain showers", 82: "Violent showers",
+        95: "Thunderstorm"
+      };
+      return weatherCodes[code] || "Unknown";
+    }
+  </script>
+</body>
+</html>
