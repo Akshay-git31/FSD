@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0b0b;
+    --ink:#f5f4ef;
+    --yellow:#f4c430;
+    --silver:#b7b7b2;
+    --silver-dim:#807f78;
+    --hairline:#3a3a36;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    font-family:'Jost', sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px 20px;
+  }
+  .page{
+    width:100%;
+    max-width:460px;
+    text-align:center;
+    transition:max-width 0.35s ease;
+  }
+  .page.has-weather{
+    max-width:840px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:70px;
+    align-items:center;
+    text-align:left;
+  }
+  .left, .right{ min-width:0; }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:4px;
+    text-transform:uppercase;
+    color:var(--silver);
+    margin-bottom:28px;
+  }
+  .search-row{
+    display:flex;
+    gap:14px;
+    border-bottom:1px solid var(--hairline);
+    padding-bottom:18px;
+    margin-bottom:8px;
+  }
+  select{
+    flex:1;
+    appearance:none;
+    background:transparent;
+    border:none;
+    border-bottom:1px solid var(--hairline);
+    padding:10px 2px;
+    font-family:'Jost', sans-serif;
+    font-size:15px;
+    letter-spacing:0.3px;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  select option{ background:var(--bg); color:var(--ink); }
+  select:focus-visible{ outline:2px solid var(--yellow); outline-offset:2px; }
+  button{
+    border:1px solid var(--yellow);
+    background:transparent;
+    color:var(--yellow);
+    padding:10px 22px;
+    font-family:'Jost', sans-serif;
+    font-size:13px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:background 0.25s ease, color 0.25s ease;
+  }
+  button:hover{ background:var(--yellow); color:var(--bg); }
+  button:focus-visible{ outline:2px solid var(--yellow); outline-offset:4px; }
+  #message{
+    color:var(--silver);
+    font-size:14px;
+    letter-spacing:0.3px;
+    margin:22px 0;
+  }
+  .hidden{ display:none; }
+  #location{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:500;
+    font-size:26px;
+    letter-spacing:1px;
+    color:var(--yellow);
+    margin-top:26px;
+  }
+  .hero{ padding-bottom:30px; }
+  .temp{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:500;
+    font-size:88px;
+    line-height:1;
+    color:var(--ink);
+  }
+  .temp .deg{ font-size:34px; vertical-align:top; position:relative; top:14px; color:var(--silver); }
+  #description{
+    font-size:14px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--silver);
+    margin-top:10px;
+  }
+  .divider{ height:1px; background:var(--hairline); }
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:22px 30px;
+    padding-top:26px;
+  }
+  .stat{ display:flex; flex-direction:column; gap:6px; }
+  .stat-label{
+    font-size:10px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--silver-dim);
+  }
+  .stat-value{
+    font-family:'Cormorant Garamond', serif;
+    font-size:26px;
+    color:var(--ink);
+  }
+  .stat-sub{ font-size:10px; letter-spacing:1px; color:var(--yellow); }
+  @media (max-width:760px){
+    .page.has-weather{
+      grid-template-columns:1fr;
+      max-width:460px;
+      text-align:center;
+      gap:0;
+    }
+    .page.has-weather .left, .page.has-weather .right{ text-align:center; }
+    .page.has-weather .stats{ justify-items:center; }
+    .temp{ font-size:70px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page" id="page">
+    <div class="left">
+      <p class="eyebrow">Weather</p>
+      <div class="search-row">
+        <select id="citySelect">
+          <option value="">Select a city</option>
+          <option value="Tokyo">Tokyo</option>
+          <option value="Osaka">Osaka</option>
+          <option value="Kyoto">Kyoto</option>
+          <option value="Hiroshima">Hiroshima</option>
+          <option value="Nagasaki">Nagasaki</option>
+          <option value="Los Angeles">Los Angeles</option>
+          <option value="San Diego">San Diego</option>
+          <option value="Mississippi">Mississippi</option>
+          <option value="Chicago">Chicago</option>
+          <option value="Madison">Madison</option>
+        </select>
+        <button id="searchBtn">View</button>
+      </div>
+      <p id="message"></p>
+      <h2 id="location" class="hidden"></h2>
+    </div>
+    <div class="right hidden" id="weather">
+      <div class="hero">
+        <div class="temp"><span id="temperature"></span><span class="deg">°C</span></div>
+        <p id="description"></p>
+      </div>
+      <div class="divider"></div>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">AQI</span>
+          <span class="stat-value" id="aqi"></span>
+          <span class="stat-sub" id="aqiLabel"></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Local Time</span>
+          <span class="stat-value" id="localTime"></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Sunrise</span>
+          <span class="stat-value" id="sunrise"></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Sunset</span>
+          <span class="stat-value" id="sunset"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const page = document.getElementById("page");
+    const citySelect = document.getElementById("citySelect");
+    const searchBtn = document.getElementById("searchBtn");
+    const weatherDiv = document.getElementById("weather");
+    const message = document.getElementById("message");
+    const locationElement = document.getElementById("location");
+    const temperatureElement = document.getElementById("temperature");
+    const descriptionElement = document.getElementById("description");
+    const aqiElement = document.getElementById("aqi");
+    const aqiLabelElement = document.getElementById("aqiLabel");
+    const sunriseElement = document.getElementById("sunrise");
+    const sunsetElement = document.getElementById("sunset");
+    const localTimeElement = document.getElementById("localTime");
+    let clockInterval = null;
+    searchBtn.addEventListener("click", getWeather);
+    async function getWeather() {
+      const city = citySelect.value;
+      if (city === "") {
+        message.textContent = "Please select a city.";
+        weatherDiv.classList.add("hidden");
+        locationElement.classList.add("hidden");
+        page.classList.remove("has-weather");
+        return;
+      }
+      message.textContent = "Loading...";
+      weatherDiv.classList.add("hidden");
+      locationElement.classList.add("hidden");
+      page.classList.remove("has-weather");
+      if (clockInterval) clearInterval(clockInterval);
+      try {
+        const geoURL = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+        const geoResponse = await fetch(geoURL);
+        if (!geoResponse.ok) throw new Error("Unable to find city.");
+        const geoData = await geoResponse.json();
+        if (!geoData.results || geoData.results.length === 0) throw new Error("City not found.");
+        const location = geoData.results[0];
+        const { latitude, longitude } = location;
+        const weatherURL = `https://api.open-meteo.com/v1/forecast` +
+          `?latitude=${latitude}&longitude=${longitude}` +
+          `&current=temperature_2m,weather_code` +
+          `&daily=sunrise,sunset` +
+          `&timezone=auto&forecast_days=1`;
+        const aqiURL = `https://air-quality-api.open-meteo.com/v1/air-quality` +
+          `?latitude=${latitude}&longitude=${longitude}&current=us_aqi&timezone=auto`;
+        const [weatherResponse, aqiResponse] = await Promise.all([fetch(weatherURL), fetch(aqiURL)]);
+        if (!weatherResponse.ok) throw new Error("Unable to fetch weather data.");
+        const weatherData = await weatherResponse.json();
+        const aqiData = aqiResponse.ok ? await aqiResponse.json() : null;
+        displayWeather(location, weatherData, aqiData);
+        message.textContent = "";
+        locationElement.classList.remove("hidden");
+        weatherDiv.classList.remove("hidden");
+        page.classList.add("has-weather");
+      } catch (error) {
+        message.textContent = error.message;
+        weatherDiv.classList.add("hidden");
+        locationElement.classList.add("hidden");
+        page.classList.remove("has-weather");
+      }
+    }
+    function displayWeather(location, data, aqiData) {
+      locationElement.textContent = `${location.name}, ${location.country}`;
+      temperatureElement.textContent = Math.round(data.current.temperature_2m);
+      descriptionElement.textContent = getWeatherDescription(data.current.weather_code);
+      sunriseElement.textContent = extractTime(data.daily.sunrise[0]);
+      sunsetElement.textContent = extractTime(data.daily.sunset[0]);
+      if (aqiData && aqiData.current && aqiData.current.us_aqi != null) {
+        const value = Math.round(aqiData.current.us_aqi);
+        aqiElement.textContent = value;
+        aqiLabelElement.textContent = getAqiLabel(value);
+      } else {
+        aqiElement.textContent = "—";
+        aqiLabelElement.textContent = "";
+      }
+      startClock(data.utc_offset_seconds);
+    }
+    function extractTime(isoString) {
+      return isoString.split("T")[1];
+    }
+    function startClock(utcOffsetSeconds) {
+      updateClock(utcOffsetSeconds);
+      clockInterval = setInterval(() => updateClock(utcOffsetSeconds), 1000);
+    }
+    function updateClock(utcOffsetSeconds) {
+      const target = new Date(Date.now() + utcOffsetSeconds * 1000);
+      const hours = String(target.getUTCHours()).padStart(2, "0");
+      const minutes = String(target.getUTCMinutes()).padStart(2, "0");
+      localTimeElement.textContent = `${hours}:${minutes}`;
+    }
+    function getAqiLabel(value) {
+      if (value <= 50) return "Good";
+      if (value <= 100) return "Moderate";
+      if (value <= 150) return "Sensitive";
+      if (value <= 200) return "Unhealthy";
+      if (value <= 300) return "Very Unhealthy";
+      return "Hazardous";
+    }
+    function getWeatherDescription(code) {
+      const weatherCodes = {
+        0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+        45: "Fog", 48: "Depositing rime fog",
+        51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle",
+        61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain",
+        71: "Slight snowfall", 73: "Moderate snowfall", 75: "Heavy snowfall",
+        80: "Slight rain showers", 81: "Moderate rain showers", 82: "Violent rain showers",
+        95: "Thunderstorm"
+      };
+      return weatherCodes[code] || "Unknown weather";
+    }
+  </script>
+</body>
+</html>
